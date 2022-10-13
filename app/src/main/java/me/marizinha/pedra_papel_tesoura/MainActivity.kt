@@ -8,20 +8,20 @@ import me.marizinha.pedra_papel_tesoura.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 
-    val binding by lazy {
+    private val binding by lazy {
         ActivityMainBinding.inflate(layoutInflater)
     }
 
-    val botPlayState = MutableLiveData<Play>()
-    val playerPlayState = MutableLiveData<Play>()
-    val resultState = MutableLiveData<GameResult>()
+    private val botPlayState = MutableLiveData<Play>()
+    private val playerPlayState = MutableLiveData<Play>()
+    private val resultState = MutableLiveData<GameResult>()
+    private val score = MutableLiveData(Pair(0, 0)) // Pair<BotScore, PlayerScore>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
 
         clickListeners()
-
         renderUI()
     }
 
@@ -39,6 +39,10 @@ class MainActivity : AppCompatActivity() {
             textResult.setTextColor(ContextCompat.getColor(this@MainActivity, it.color))
         }
 
+        score.observe(this@MainActivity) {
+            textBot.text = getString(R.string.bot_score, it.first)
+            textYou.text = getString(R.string.you_score, it.second)
+        }
     }
 
     private fun clickListeners() = binding.apply {
@@ -62,40 +66,68 @@ class MainActivity : AppCompatActivity() {
         val botPlay = Play.randomPlay()
         botPlayState.value = botPlay
 
-        val result = when(play) {
+        val result = when (play) {
             Play.ROCK -> {
-                if (botPlay == Play.PAPER) {
-                    GameResult.DEFEAT
-                } else if (botPlay == Play.ROCK) {
-                    GameResult.TIE
-                } else {
-                    GameResult.VICTORY
+                when (botPlay) {
+                    Play.PAPER -> {
+                        GameResult.DEFEAT
+                    }
+                    Play.ROCK -> {
+                        GameResult.TIE
+                    }
+                    else -> {
+                        GameResult.VICTORY
+                    }
                 }
             }
 
             Play.PAPER -> {
-                if (botPlay == Play.SCISSOR) {
-                    GameResult.DEFEAT
-                } else if (botPlay == Play.PAPER) {
-                    GameResult.TIE
-                } else {
-                    GameResult.VICTORY
+                when (botPlay) {
+                    Play.SCISSOR -> {
+                        GameResult.DEFEAT
+                    }
+                    Play.PAPER -> {
+                        GameResult.TIE
+                    }
+                    else -> {
+                        GameResult.VICTORY
+                    }
                 }
             }
 
             Play.SCISSOR -> {
-                if (botPlay == Play.ROCK) {
-                    GameResult.DEFEAT
-                } else if (botPlay == Play.SCISSOR) {
-                    GameResult.TIE
-                } else {
-                    GameResult.VICTORY
+                when (botPlay) {
+                    Play.ROCK -> {
+                        GameResult.DEFEAT
+                    }
+                    Play.SCISSOR -> {
+                        GameResult.TIE
+                    }
+                    else -> {
+                        GameResult.VICTORY
+                    }
                 }
             }
         }
 
         resultState.value = result
-
+        handleScore(result)
         return result
+    }
+
+    private fun handleScore(result: GameResult) {
+        var botScore: Int = score.value?.first ?: 0 // javascript -> botScore ? score.value?.first : 0
+        var playerScore: Int = score.value?.second ?: 0
+
+        val sum = when (result) {
+            GameResult.VICTORY -> Pair(+0, +10)
+            GameResult.TIE -> Pair(+5, +5)
+            GameResult.DEFEAT -> Pair(+10, +0)
+        }
+
+        botScore += sum.first // botScore = botScore + sum.first
+        playerScore += sum.second
+
+        score.value = Pair(botScore, playerScore)
     }
 }
