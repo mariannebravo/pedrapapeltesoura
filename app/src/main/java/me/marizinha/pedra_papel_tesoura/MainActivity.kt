@@ -2,8 +2,10 @@ package me.marizinha.pedra_papel_tesoura
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.MutableLiveData
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import me.marizinha.pedra_papel_tesoura.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -16,6 +18,7 @@ class MainActivity : AppCompatActivity() {
     private val playerPlayState = MutableLiveData<Play>()
     private val resultState = MutableLiveData<GameResult>()
     private val score = MutableLiveData(Pair(0, 0)) // Pair<BotScore, PlayerScore>
+    private val play = MutableLiveData(1)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,6 +45,14 @@ class MainActivity : AppCompatActivity() {
         score.observe(this@MainActivity) {
             textBot.text = getString(R.string.bot_score, it.first)
             textYou.text = getString(R.string.you_score, it.second)
+        }
+
+        play.observe(this@MainActivity) {
+            if (it > 1) {
+                textPlays.visibility = View.VISIBLE
+            }
+
+            textPlays.text = getString(R.string.plays, it, MAX_PLAYS)
         }
     }
 
@@ -112,6 +123,7 @@ class MainActivity : AppCompatActivity() {
 
         resultState.value = result
         handleScore(result)
+        handlePlays()
         return result
     }
 
@@ -129,5 +141,39 @@ class MainActivity : AppCompatActivity() {
         playerScore += sum.second
 
         score.value = Pair(botScore, playerScore)
+    }
+
+    private fun handlePlays() {
+        if ((play.value ?: 0) == MAX_PLAYS) {
+            resetGame()
+        } else {
+            play.value = play.value?.plus(1)
+        }
+    }
+
+    private fun resetGame() {
+        val botScore = score.value?.first ?: 0
+        val playerScore = score.value?.second ?: 0
+
+        val message = if (playerScore > botScore) {
+            "You Won! c:"
+        } else if (playerScore == botScore) {
+            "Tie :p"
+        } else {
+            "You lost :c"
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setMessage(message)
+            .setPositiveButton("Ok", null)
+            .setOnDismissListener {
+                play.value = 1
+                score.value = Pair(0, 0)
+            }
+            .show()
+    }
+
+    companion object {
+        const val MAX_PLAYS = 10
     }
 }

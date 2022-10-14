@@ -2,4 +2,5 @@
     <string name="app_name">Jogo da Mari e do Gui</string>
     <string name="you_score">You | Score: %d</string>
     <string name="bot_score">Bot | Score: %d</string>
+    <string name="plays">Plays: %d/%d</string>
 </resources>
